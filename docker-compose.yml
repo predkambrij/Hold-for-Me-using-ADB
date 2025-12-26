@@ -1,0 +1,29 @@
+services:
+  app:
+    build:
+      context: .
+      network: host
+      dockerfile_inline: |
+        FROM ubuntu:24.04
+
+        ENV DEBIAN_FRONTEND=noninteractive
+
+        RUN apt-get update && apt-get install -y \
+          android-tools-adb \
+          jq \
+          curl \
+          libxml2-utils \
+          speech-dispatcher \
+          espeak-ng \
+          pulseaudio-utils
+
+        WORKDIR /app
+    privileged: true
+    volumes:
+      - .:/app
+      - ~/.android:/root/.android
+      - $XDG_RUNTIME_DIR/pulse:$XDG_RUNTIME_DIR/pulse
+    environment:
+      - PULSE_SERVER=unix:$XDG_RUNTIME_DIR/pulse/native
+      - PULSE_RUNTIME_DIR=$XDG_RUNTIME_DIR/pulse
+
