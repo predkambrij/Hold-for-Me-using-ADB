@@ -3,6 +3,10 @@
 #set -o xtrace
 set -o errexit
 set -o pipefail
+set -o errtrace
+shopt -s inherit_errexit
+
+trap 'echo "TRAP: script failed!" >&2; for ((;;)); do spd-say -w "script failed"; done' ERR
 
 
 scriptDir="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
@@ -23,7 +27,8 @@ OUTPUT: Return only \"HOLD\" or \"PICKED\"
 "
     #echo $"$prompt" 1>&2 # debug
 
-    json_body=$(jq -n --argjson input "$(echo "$prompt" | jq -Rs .)" '{
+    escaped_prompt=$(echo "$prompt" | jq -Rs .)
+    json_body=$(jq -n --argjson input "$escaped_prompt" '{
         "model": "gpt-5.2",
         "reasoning": {
             "effort": "none",
@@ -45,7 +50,7 @@ function main() {
     local counter=1
 
     while true; do
-        current_dump=$(adb exec-out uiautomator dump /dev/tty 2>/dev/null | sed 's|UI hierchary dumped to: /dev/tty||')
+        current_dump=$(adb exec-out uiautomator dump /dev/tty | sed 's|UI hierchary dumped to: /dev/tty||')
         current_md5=$(echo "$current_dump" | md5sum | cut -d' ' -f1)
 
         if [ "$current_md5" != "$last_md5" ]; then
