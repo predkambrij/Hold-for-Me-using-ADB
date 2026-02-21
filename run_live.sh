@@ -1,9 +1,5 @@
-#!/bin/bash
-
-#set -o xtrace
-set -o errexit
+#!/bin/bash -eEux
 set -o pipefail
-set -o errtrace
 shopt -s inherit_errexit
 
 trap 'echo "TRAP: script failed!" >&2; for ((;;)); do spd-say -w "script failed"; done' ERR
