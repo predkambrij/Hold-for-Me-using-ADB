@@ -1,21 +1,21 @@
 # Hold For Me using ADB
 A script that monitors your phone call and alerts you when someone picks up, so you don't have to listen on hold music.
-Uses Android's Live Caption feature + OpenAI to detect when a human answers.
+Uses Android's Live Caption feature + Groq (or OpenAI) to detect when a human answers.
 
 ## Requirements
 
 - [Live Caption](https://support.google.com/accessibility/android/answer/9350862) enabled on your phone
 - USB debugging on your phone
-- OpenAI API key
+- Groq or OpenAI API key
 - `xmllint`, `jq`, `spd-say`, `adb`, `curl` (or using Docker)
 
 ## Setup
 
-Copy the sample config and add your OpenAI API key:
+Copy the sample config and add your API key:
 
    ```bash
    cp config.sample.sh config.sh
-   # Edit config.sh with your OPENAI_API_KEY
+   # Edit config.sh with your API key
    ```
 
 Connect your phone via ADB:

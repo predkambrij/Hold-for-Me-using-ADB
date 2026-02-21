@@ -1,6 +1,7 @@
-#!/bin/bash -eEux
+#!/bin/bash -eEu
 set -o pipefail
 shopt -s inherit_errexit
+# set -o xtrace
 
 trap 'echo "TRAP: script failed!" >&2; for ((;;)); do spd-say -w "script failed"; done' ERR
 
@@ -24,21 +25,46 @@ OUTPUT: Return only \"HOLD\" or \"PICKED\"
     #echo $"$prompt" 1>&2 # debug
 
     escaped_prompt=$(echo "$prompt" | jq -Rs .)
-    json_body=$(jq -n --argjson input "$escaped_prompt" '{
-        "model": "gpt-5.2",
-        "reasoning": {
-            "effort": "none",
-            "summary": null
-        },
-        "input": $input
-    }')
 
-    response=$(curl -s https://api.openai.com/v1/responses \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $OPENAI_API_KEY" \
-        -d "$json_body")
+    if [ -n "${GROQ_API_KEY:-}" ]; then
+        json_body=$(jq -n --argjson content "$escaped_prompt" '{
+            "model": "qwen/qwen3-32b",
+            "messages": [{"role": "user", "content": $content}],
+            "temperature": 0.6,
+            "max_completion_tokens": 4096,
+            "top_p": 0.95,
+            "stream": false,
+            "reasoning_effort": "none",
+            "stop": null
+        }')
 
-    echo "$response" | jq -r '.output[0].content[0].text'
+        response=$(curl -s https://api.groq.com/openai/v1/chat/completions \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GROQ_API_KEY" \
+            -d "$json_body")
+
+        echo "$response" | jq -r '.choices[0].message.content'
+    elif [ -n "${OPENAI_API_KEY:-}" ]; then
+        json_body=$(jq -n --argjson input "$escaped_prompt" '{
+            "model": "gpt-5.2",
+            "reasoning": {
+                "effort": "none",
+                "summary": null
+            },
+            "input": $input
+        }')
+
+        response=$(curl -s https://api.openai.com/v1/responses \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -d "$json_body")
+
+        echo "$response" | jq -r '.output[0].content[0].text'
+    else
+        echo "ERROR: Neither GROQ_API_KEY nor OPENAI_API_KEY is set" >&2
+        return 1
+    fi
 }
 
 function main() {
@@ -83,3 +109,5 @@ function main() {
 }
 
 main
+
+#llmQuery "music" # test
